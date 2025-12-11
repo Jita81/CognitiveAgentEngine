@@ -1,6 +1,11 @@
-"""Cognitive processing API routes."""
+"""Cognitive processing API routes.
 
-from typing import Annotated, Optional
+Includes:
+- Phase 3: Tiered cognitive processing endpoints
+- Phase 4: Internal Mind state endpoints
+"""
+
+from typing import Annotated, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +17,10 @@ from src.cognitive import (
     CognitiveTier,
     CognitiveProcessor,
     CognitiveResult,
+    InternalMind,
+    ThoughtAccumulator,
+    BackgroundProcessor,
+    create_background_processor,
     get_all_tier_configs,
     get_tier_config,
 )
@@ -300,5 +309,397 @@ async def get_status(model_router: ModelRouterDep) -> dict:
         "status": "operational",
         "model_router": router_status.to_dict(),
         "tiers_available": [t.name for t in CognitiveTier],
+    }
+
+
+# ==========================================
+# Phase 4: Internal Mind Endpoints
+# ==========================================
+
+
+# Store for agent minds (in-memory for MVP)
+# In production, this would be managed by an AgentManager service
+_agent_minds: Dict[str, InternalMind] = {}
+_background_processors: Dict[str, BackgroundProcessor] = {}
+
+
+def get_or_create_mind(agent_id: UUID) -> InternalMind:
+    """Get or create an InternalMind for an agent."""
+    agent_id_str = str(agent_id)
+    if agent_id_str not in _agent_minds:
+        _agent_minds[agent_id_str] = InternalMind(agent_id=agent_id_str)
+    return _agent_minds[agent_id_str]
+
+
+class MindStateResponse(BaseModel):
+    """Response with mind state information."""
+
+    agent_id: str
+    active_thoughts: int
+    streams: int
+    streams_needing_synthesis: int
+    held_insights: int
+    ready_to_share: int
+    background_tasks: int
+    stream_topics: List[str]
+
+
+class MindDetailedStateResponse(MindStateResponse):
+    """Detailed mind state response with stream info."""
+
+    streams_detail: List[dict]
+    ready_thoughts: List[dict]
+
+
+class ReadyThoughtResponse(BaseModel):
+    """Response containing a thought ready to share."""
+
+    thought_id: str
+    tier: str
+    content: str
+    thought_type: str
+    confidence: float
+    completeness: float
+
+
+class InvalidateRequest(BaseModel):
+    """Request to invalidate thoughts about a topic."""
+
+    topic: str = Field(
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Topic to invalidate thoughts about",
+    )
+
+
+class InvalidateResponse(BaseModel):
+    """Response from thought invalidation."""
+
+    topic: str
+    thoughts_invalidated: int
+
+
+class ObservationRequest(BaseModel):
+    """Request to process an observation."""
+
+    stimulus: str = Field(
+        ...,
+        min_length=1,
+        max_length=5000,
+        description="The observation to process",
+    )
+    relevance: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="How relevant this observation is to the agent",
+    )
+    context: Optional[dict] = Field(
+        None,
+        description="Additional context",
+    )
+
+
+@router.get(
+    "/mind/{agent_id}/state",
+    response_model=MindStateResponse,
+    summary="Get mind state",
+    description="Get the current state of an agent's internal mind.",
+)
+async def get_mind_state(
+    agent_id: UUID,
+    repo: AgentRepo,
+) -> MindStateResponse:
+    """Get the current state of an agent's internal mind.
+    
+    Returns summary information about active thoughts, streams,
+    held insights, and thoughts ready to share.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+    state = mind.get_state()
+
+    return MindStateResponse(**state)
+
+
+@router.get(
+    "/mind/{agent_id}/state/detailed",
+    response_model=MindDetailedStateResponse,
+    summary="Get detailed mind state",
+    description="Get detailed state of an agent's internal mind including stream info.",
+)
+async def get_mind_detailed_state(
+    agent_id: UUID,
+    repo: AgentRepo,
+) -> MindDetailedStateResponse:
+    """Get detailed state of an agent's internal mind.
+    
+    Returns full information including stream details and ready thoughts.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+    state = mind.get_detailed_state()
+
+    return MindDetailedStateResponse(**state)
+
+
+@router.get(
+    "/mind/{agent_id}/ready-thoughts",
+    summary="Get thoughts ready to share",
+    description="Get thoughts that are ready to be externalized/shared.",
+)
+async def get_ready_thoughts(
+    agent_id: UUID,
+    repo: AgentRepo,
+) -> dict:
+    """Get thoughts ready to be shared.
+    
+    Returns list of thoughts marked ready for externalization.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+
+    return {
+        "agent_id": str(agent_id),
+        "count": len(mind.ready_to_share),
+        "thoughts": [
+            {
+                "thought_id": str(t.thought_id),
+                "tier": t.tier.name,
+                "content": t.content,
+                "thought_type": t.thought_type.value,
+                "confidence": t.confidence,
+                "completeness": t.completeness,
+            }
+            for t in mind.ready_to_share
+        ],
+    }
+
+
+@router.get(
+    "/mind/{agent_id}/best-contribution",
+    summary="Get best thought to share",
+    description="Get the best thought to share right now, if any.",
+)
+async def get_best_contribution(
+    agent_id: UUID,
+    repo: AgentRepo,
+) -> dict:
+    """Get the best thought to share.
+    
+    Selects the best thought based on relevance, confidence, and completeness.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+    best = mind.get_best_contribution()
+
+    if best is None:
+        return {
+            "agent_id": str(agent_id),
+            "has_contribution": False,
+            "thought": None,
+        }
+
+    return {
+        "agent_id": str(agent_id),
+        "has_contribution": True,
+        "thought": {
+            "thought_id": str(best.thought_id),
+            "tier": best.tier.name,
+            "content": best.content,
+            "thought_type": best.thought_type.value,
+            "confidence": best.confidence,
+            "completeness": best.completeness,
+        },
+    }
+
+
+@router.post(
+    "/mind/{agent_id}/invalidate",
+    response_model=InvalidateResponse,
+    summary="Invalidate thoughts about topic",
+    description="Mark thoughts about a topic as no longer relevant.",
+)
+async def invalidate_thoughts(
+    agent_id: UUID,
+    request: InvalidateRequest,
+    repo: AgentRepo,
+) -> InvalidateResponse:
+    """Invalidate thoughts about a topic.
+    
+    Use when new information supersedes previous thinking.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+    count = mind.invalidate_thoughts_about(request.topic)
+
+    return InvalidateResponse(
+        topic=request.topic,
+        thoughts_invalidated=count,
+    )
+
+
+@router.post(
+    "/mind/{agent_id}/observe",
+    summary="Process an observation",
+    description="Process an observation with low cognitive effort, accumulating in the mind.",
+)
+async def process_observation(
+    agent_id: UUID,
+    request: ObservationRequest,
+    repo: AgentRepo,
+    model_router: ModelRouterDep,
+) -> dict:
+    """Process an observation into the agent's mind.
+    
+    Creates small thought bubbles that accumulate, enabling
+    "listening" behavior where thoughts build up before speaking.
+    """
+    # Get the agent
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    # Get or create mind and processor
+    mind = get_or_create_mind(agent_id)
+    processor = CognitiveProcessor(agent=agent, model_router=model_router)
+    accumulator = ThoughtAccumulator(mind=mind, processor=processor)
+
+    # Process the observation
+    thought = await accumulator.process_observation(
+        stimulus=request.stimulus,
+        relevance=request.relevance,
+        context=request.context,
+    )
+
+    if thought is None:
+        return {
+            "agent_id": str(agent_id),
+            "processed": False,
+            "thought": None,
+            "accumulation": accumulator.get_accumulation_summary(),
+        }
+
+    return {
+        "agent_id": str(agent_id),
+        "processed": True,
+        "thought": {
+            "thought_id": str(thought.thought_id),
+            "tier": thought.tier.name,
+            "content": thought.content,
+            "thought_type": thought.thought_type.value,
+            "confidence": thought.confidence,
+        },
+        "accumulation": accumulator.get_accumulation_summary(),
+    }
+
+
+@router.post(
+    "/mind/{agent_id}/externalize/{thought_id}",
+    summary="Mark thought as externalized",
+    description="Mark a thought as having been spoken/shared.",
+)
+async def externalize_thought(
+    agent_id: UUID,
+    thought_id: UUID,
+    repo: AgentRepo,
+) -> dict:
+    """Mark a thought as externalized.
+    
+    Call this after the thought has been shared/spoken.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+    
+    # Check if thought exists
+    thought_id_str = str(thought_id)
+    if thought_id_str not in mind.active_thoughts:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Thought {thought_id} not found in agent's mind",
+        )
+
+    mind.mark_externalized(thought_id)
+
+    return {
+        "agent_id": str(agent_id),
+        "thought_id": str(thought_id),
+        "externalized": True,
+    }
+
+
+@router.delete(
+    "/mind/{agent_id}",
+    summary="Clear agent's mind",
+    description="Clear all state from the agent's internal mind.",
+)
+async def clear_mind(
+    agent_id: UUID,
+    repo: AgentRepo,
+) -> dict:
+    """Clear all state from the agent's mind.
+    
+    Use with caution - this removes all accumulated thoughts.
+    """
+    # Verify agent exists
+    agent = await repo.get(agent_id)
+    if agent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent {agent_id} not found",
+        )
+
+    mind = get_or_create_mind(agent_id)
+    mind.clear()
+
+    return {
+        "agent_id": str(agent_id),
+        "cleared": True,
     }
 

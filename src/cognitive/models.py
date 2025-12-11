@@ -63,9 +63,17 @@ class Thought(BaseModel):
         default=False,
         description="Whether this thought has been spoken/shared",
     )
+    externalized_at: Optional[datetime] = Field(
+        default=None,
+        description="When this thought was externalized (if ever)",
+    )
     still_relevant: bool = Field(
         default=True,
         description="Whether this thought is still relevant",
+    )
+    superseded_by: Optional[UUID] = Field(
+        default=None,
+        description="ID of thought that superseded this one (e.g., synthesis)",
     )
     
     # Optional references
@@ -88,7 +96,9 @@ class Thought(BaseModel):
             "confidence": self.confidence,
             "completeness": self.completeness,
             "externalized": self.externalized,
+            "externalized_at": self.externalized_at.isoformat() if self.externalized_at else None,
             "still_relevant": self.still_relevant,
+            "superseded_by": str(self.superseded_by) if self.superseded_by else None,
             "related_thought_ids": [str(tid) for tid in self.related_thought_ids],
         }
 
