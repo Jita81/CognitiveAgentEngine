@@ -4,9 +4,9 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
+from src.cognitive.tiers import CognitiveTier, TIER_CONFIGS
 from src.infrastructure.budget_manager import TokenBudgetManager
 from src.infrastructure.model_client import (
     InferenceRequest,
@@ -19,19 +19,12 @@ from src.infrastructure.model_client import (
 logger = logging.getLogger(__name__)
 
 
-class CognitiveTier(Enum):
-    """Cognitive processing tiers with increasing depth and cost."""
-
-    REFLEX = 0  # Immediate reactions, ~150 tokens
-    REACTIVE = 1  # Quick assessments, ~400 tokens
-    DELIBERATE = 2  # Considered responses, ~1200 tokens
-    ANALYTICAL = 3  # Deep analysis, ~2500 tokens
-    COMPREHENSIVE = 4  # Maximum depth, ~4000 tokens
-
-
 @dataclass
 class CognitiveTierConfig:
-    """Configuration for a cognitive tier."""
+    """Configuration for a cognitive tier (router-specific).
+    
+    Maps cognitive tiers to model tiers with timeout settings.
+    """
 
     tier: CognitiveTier
     max_tokens: int
@@ -44,7 +37,7 @@ class CognitiveTierConfig:
         return self.timeout_ms / 1000
 
 
-# Cognitive tier configurations
+# Cognitive tier to model tier mappings
 COGNITIVE_TIER_CONFIGS: Dict[CognitiveTier, CognitiveTierConfig] = {
     CognitiveTier.REFLEX: CognitiveTierConfig(
         tier=CognitiveTier.REFLEX,
