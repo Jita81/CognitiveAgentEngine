@@ -1,0 +1,424 @@
+{
+  "high_urgency": [
+    {
+      "id": "urgent_001",
+      "stimulus": "ALERT! Production server is down!",
+      "expected_tier": "REFLEX",
+      "urgency": 1.0,
+      "complexity": 0.3,
+      "relevance_backend": 1.0,
+      "relevance_ux": 0.3,
+      "description": "Critical infrastructure failure"
+    },
+    {
+      "id": "urgent_002",
+      "stimulus": "Security breach detected! Someone is accessing customer data!",
+      "expected_tier": "REFLEX",
+      "urgency": 0.95,
+      "complexity": 0.5,
+      "relevance_backend": 0.9,
+      "relevance_ux": 0.4,
+      "description": "Security emergency"
+    },
+    {
+      "id": "urgent_003",
+      "stimulus": "The CEO is on the phone asking about the demo right now!",
+      "expected_tier": "REFLEX",
+      "urgency": 0.9,
+      "complexity": 0.2,
+      "relevance_backend": 0.5,
+      "relevance_ux": 0.7,
+      "description": "Executive pressure"
+    },
+    {
+      "id": "urgent_004",
+      "stimulus": "Quick! The deployment is failing, what should we do?",
+      "expected_tier": "REFLEX",
+      "urgency": 0.85,
+      "complexity": 0.4,
+      "relevance_backend": 0.95,
+      "relevance_ux": 0.2,
+      "description": "Deployment emergency"
+    },
+    {
+      "id": "urgent_005",
+      "stimulus": "The database is corrupting data! Stop everything!",
+      "expected_tier": "REFLEX",
+      "urgency": 0.98,
+      "complexity": 0.6,
+      "relevance_backend": 1.0,
+      "relevance_ux": 0.2,
+      "description": "Data integrity emergency"
+    }
+  ],
+  "low_urgency": [
+    {
+      "id": "calm_001",
+      "stimulus": "When you have time, could you review this architecture document?",
+      "expected_tier": "DELIBERATE",
+      "urgency": 0.1,
+      "complexity": 0.7,
+      "relevance_backend": 0.9,
+      "relevance_ux": 0.4,
+      "description": "Async architecture review"
+    },
+    {
+      "id": "calm_002",
+      "stimulus": "I've been thinking about our long-term database strategy. What are your thoughts?",
+      "expected_tier": "DELIBERATE",
+      "urgency": 0.15,
+      "complexity": 0.8,
+      "relevance_backend": 0.95,
+      "relevance_ux": 0.3,
+      "description": "Strategic planning"
+    },
+    {
+      "id": "calm_003",
+      "stimulus": "Let's brainstorm some ideas for improving our API design patterns.",
+      "expected_tier": "DELIBERATE",
+      "urgency": 0.2,
+      "complexity": 0.7,
+      "relevance_backend": 0.9,
+      "relevance_ux": 0.5,
+      "description": "Design brainstorming"
+    },
+    {
+      "id": "calm_004",
+      "stimulus": "Over the next quarter, we should consider our caching strategy. Any initial thoughts?",
+      "expected_tier": "DELIBERATE",
+      "urgency": 0.1,
+      "complexity": 0.65,
+      "relevance_backend": 0.85,
+      "relevance_ux": 0.2,
+      "description": "Quarterly planning"
+    },
+    {
+      "id": "calm_005",
+      "stimulus": "I'd like your perspective on microservices vs monolith for our new project.",
+      "expected_tier": "ANALYTICAL",
+      "urgency": 0.1,
+      "complexity": 0.85,
+      "relevance_backend": 0.95,
+      "relevance_ux": 0.3,
+      "description": "Architecture philosophy"
+    }
+  ],
+  "low_relevance": [
+    {
+      "id": "irrelevant_001",
+      "stimulus": "The weather is really nice today, isn't it?",
+      "expected_tier": "REFLEX",
+      "urgency": 0.1,
+      "complexity": 0.1,
+      "relevance_backend": 0.1,
+      "relevance_ux": 0.1,
+      "description": "Small talk - weather"
+    },
+    {
+      "id": "irrelevant_002",
+      "stimulus": "Did anyone watch the game last night?",
+      "expected_tier": "REFLEX",
+      "urgency": 0.1,
+      "complexity": 0.1,
+      "relevance_backend": 0.1,
+      "relevance_ux": 0.1,
+      "description": "Small talk - sports"
+    },
+    {
+      "id": "irrelevant_003",
+      "stimulus": "I heard there's a new coffee shop opening nearby.",
+      "expected_tier": "REFLEX",
+      "urgency": 0.05,
+      "complexity": 0.05,
+      "relevance_backend": 0.05,
+      "relevance_ux": 0.1,
+      "description": "Small talk - local news"
+    },
+    {
+      "id": "irrelevant_004",
+      "stimulus": "Has anyone tried that new restaurant downtown?",
+      "expected_tier": "REFLEX",
+      "urgency": 0.05,
+      "complexity": 0.05,
+      "relevance_backend": 0.05,
+      "relevance_ux": 0.1,
+      "description": "Small talk - food"
+    }
+  ],
+  "expertise_specific": {
+    "backend": [
+      {
+        "id": "backend_001",
+        "stimulus": "How should we optimize our PostgreSQL query performance?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.3,
+        "complexity": 0.7,
+        "relevance_backend": 0.95,
+        "relevance_ux": 0.1,
+        "description": "Database optimization"
+      },
+      {
+        "id": "backend_002",
+        "stimulus": "What's the best approach for implementing rate limiting?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.3,
+        "complexity": 0.6,
+        "relevance_backend": 0.9,
+        "relevance_ux": 0.2,
+        "description": "API infrastructure"
+      },
+      {
+        "id": "backend_003",
+        "stimulus": "Should we use Redis or Memcached for session storage?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.25,
+        "complexity": 0.6,
+        "relevance_backend": 0.9,
+        "relevance_ux": 0.15,
+        "description": "Caching decision"
+      },
+      {
+        "id": "backend_004",
+        "stimulus": "How do we handle database migrations without downtime?",
+        "expected_tier": "ANALYTICAL",
+        "urgency": 0.2,
+        "complexity": 0.8,
+        "relevance_backend": 0.95,
+        "relevance_ux": 0.1,
+        "description": "Zero-downtime deployment"
+      },
+      {
+        "id": "backend_005",
+        "stimulus": "What's your recommendation for implementing event sourcing?",
+        "expected_tier": "ANALYTICAL",
+        "urgency": 0.15,
+        "complexity": 0.85,
+        "relevance_backend": 0.95,
+        "relevance_ux": 0.2,
+        "description": "Architecture pattern"
+      }
+    ],
+    "ux": [
+      {
+        "id": "ux_001",
+        "stimulus": "How should we improve the user onboarding flow?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.3,
+        "complexity": 0.7,
+        "relevance_backend": 0.3,
+        "relevance_ux": 0.95,
+        "description": "UX improvement"
+      },
+      {
+        "id": "ux_002",
+        "stimulus": "What color scheme would work best for our dashboard?",
+        "expected_tier": "REACTIVE",
+        "urgency": 0.25,
+        "complexity": 0.5,
+        "relevance_backend": 0.1,
+        "relevance_ux": 0.9,
+        "description": "Visual design"
+      },
+      {
+        "id": "ux_003",
+        "stimulus": "Should we use a modal or a drawer for the settings panel?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.3,
+        "complexity": 0.5,
+        "relevance_backend": 0.2,
+        "relevance_ux": 0.85,
+        "description": "UI pattern decision"
+      },
+      {
+        "id": "ux_004",
+        "stimulus": "How do we handle error states in a user-friendly way?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.35,
+        "complexity": 0.6,
+        "relevance_backend": 0.4,
+        "relevance_ux": 0.9,
+        "description": "Error UX"
+      },
+      {
+        "id": "ux_005",
+        "stimulus": "What accessibility considerations should we prioritize?",
+        "expected_tier": "ANALYTICAL",
+        "urgency": 0.2,
+        "complexity": 0.75,
+        "relevance_backend": 0.3,
+        "relevance_ux": 0.95,
+        "description": "Accessibility planning"
+      }
+    ],
+    "security": [
+      {
+        "id": "security_001",
+        "stimulus": "How should we implement OAuth 2.0 for our API?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.3,
+        "complexity": 0.75,
+        "relevance_backend": 0.85,
+        "relevance_ux": 0.3,
+        "description": "Authentication"
+      },
+      {
+        "id": "security_002",
+        "stimulus": "What's the best approach for encrypting sensitive data at rest?",
+        "expected_tier": "ANALYTICAL",
+        "urgency": 0.2,
+        "complexity": 0.8,
+        "relevance_backend": 0.9,
+        "relevance_ux": 0.1,
+        "description": "Data encryption"
+      },
+      {
+        "id": "security_003",
+        "stimulus": "How do we prevent SQL injection attacks?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.4,
+        "complexity": 0.6,
+        "relevance_backend": 0.95,
+        "relevance_ux": 0.1,
+        "description": "Security hardening"
+      }
+    ],
+    "devops": [
+      {
+        "id": "devops_001",
+        "stimulus": "How should we set up our CI/CD pipeline?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.25,
+        "complexity": 0.7,
+        "relevance_backend": 0.7,
+        "relevance_ux": 0.2,
+        "description": "CI/CD setup"
+      },
+      {
+        "id": "devops_002",
+        "stimulus": "What Kubernetes resources do we need for this service?",
+        "expected_tier": "DELIBERATE",
+        "urgency": 0.3,
+        "complexity": 0.75,
+        "relevance_backend": 0.75,
+        "relevance_ux": 0.1,
+        "description": "Infrastructure planning"
+      }
+    ]
+  },
+  "mixed_scenarios": [
+    {
+      "id": "mixed_001",
+      "stimulus": "The API is slow AND the error messages are confusing users. We need to fix both!",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.7,
+      "complexity": 0.6,
+      "relevance_backend": 0.8,
+      "relevance_ux": 0.7,
+      "description": "Multi-domain issue"
+    },
+    {
+      "id": "mixed_002",
+      "stimulus": "Before the demo tomorrow, should we focus on performance or polish?",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.75,
+      "complexity": 0.5,
+      "relevance_backend": 0.7,
+      "relevance_ux": 0.7,
+      "description": "Prioritization under pressure"
+    },
+    {
+      "id": "mixed_003",
+      "stimulus": "We have a complex decision to make quickly: rewrite or patch?",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.8,
+      "complexity": 0.8,
+      "relevance_backend": 0.85,
+      "relevance_ux": 0.4,
+      "description": "Fast complex decision"
+    },
+    {
+      "id": "mixed_004",
+      "stimulus": "This is a critical but also nuanced situation. The system is degraded but not down.",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.65,
+      "complexity": 0.7,
+      "relevance_backend": 0.9,
+      "relevance_ux": 0.3,
+      "description": "Degraded state analysis"
+    }
+  ],
+  "questions": [
+    {
+      "id": "question_001",
+      "stimulus": "What do you think?",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.4,
+      "complexity": 0.4,
+      "relevance_backend": 0.6,
+      "relevance_ux": 0.6,
+      "description": "Open-ended question"
+    },
+    {
+      "id": "question_002",
+      "stimulus": "Does this approach make sense to you?",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.4,
+      "complexity": 0.5,
+      "relevance_backend": 0.7,
+      "relevance_ux": 0.7,
+      "description": "Validation question"
+    },
+    {
+      "id": "question_003",
+      "stimulus": "Any concerns with this plan?",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.45,
+      "complexity": 0.5,
+      "relevance_backend": 0.7,
+      "relevance_ux": 0.5,
+      "description": "Concern solicitation"
+    },
+    {
+      "id": "question_004",
+      "stimulus": "How long do you think this will take?",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.5,
+      "complexity": 0.4,
+      "relevance_backend": 0.8,
+      "relevance_ux": 0.4,
+      "description": "Estimation request"
+    }
+  ],
+  "conflict_scenarios": [
+    {
+      "id": "conflict_001",
+      "stimulus": "I disagree with that approach. It's going to cause problems.",
+      "expected_tier": "REACTIVE",
+      "urgency": 0.5,
+      "complexity": 0.6,
+      "relevance_backend": 0.7,
+      "relevance_ux": 0.5,
+      "description": "Pushback response"
+    },
+    {
+      "id": "conflict_002",
+      "stimulus": "We've debated this before and I still think we're making a mistake.",
+      "expected_tier": "DELIBERATE",
+      "urgency": 0.4,
+      "complexity": 0.7,
+      "relevance_backend": 0.7,
+      "relevance_ux": 0.5,
+      "description": "Recurring disagreement"
+    },
+    {
+      "id": "conflict_003",
+      "stimulus": "The team is split on this. How do we move forward?",
+      "expected_tier": "DELIBERATE",
+      "urgency": 0.5,
+      "complexity": 0.7,
+      "relevance_backend": 0.6,
+      "relevance_ux": 0.6,
+      "description": "Conflict resolution"
+    }
+  ]
+}
