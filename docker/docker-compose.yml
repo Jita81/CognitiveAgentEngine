@@ -1,0 +1,103 @@
+# Cognitive Agent Engine - Docker Compose for Development
+# Usage: docker-compose -f docker/docker-compose.yml up
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # API Service
+  # ===========================================================================
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: development
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVICE_NAME=cognitive-agent-engine
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql+asyncpg://cae:cae@db:5432/cae
+      - REDIS_URL=redis://redis:6379
+      # Model endpoints (Phase 2)
+      - VLLM_SMALL_URL=
+      - VLLM_MEDIUM_URL=
+      - VLLM_LARGE_URL=
+      # Budget (Phase 2)
+      - HOURLY_BUDGET_USD=15.0
+      - BUDGET_ALERT_THRESHOLD=0.8
+      # Agents
+      - MAX_ACTIVE_AGENTS=20
+      - AGENT_MEMORY_LIMIT_MB=100
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../migrations:/app/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - cae-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cae
+      POSTGRES_USER: cae
+      POSTGRES_PASSWORD: cae
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cae -d cae"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cae-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Redis Cache
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cae-network
+    restart: unless-stopped
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  cae-network:
+    driver: bridge
+
