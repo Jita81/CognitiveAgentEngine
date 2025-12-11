@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.api.routes import agents, cognitive, health, models, social
+from src.api.routes import agents, cognitive, health, memory, models, social
 from src.core.config import get_settings
 from src.core.exceptions import CAEException
 from src.infrastructure.database import close_db, init_db
@@ -78,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(models.router)
     app.include_router(cognitive.router)
     app.include_router(social.router)
+    app.include_router(memory.router)
 
     return app
 
