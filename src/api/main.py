@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.api.routes import agents, health
+from src.api.routes import agents, health, models
 from src.core.config import get_settings
 from src.core.exceptions import CAEException
 from src.infrastructure.database import close_db, init_db
@@ -75,6 +75,7 @@ def create_app() -> FastAPI:
     # Register routes
     app.include_router(health.router)
     app.include_router(agents.router)
+    app.include_router(models.router)
 
     return app
 

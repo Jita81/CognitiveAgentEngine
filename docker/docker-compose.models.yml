@@ -1,0 +1,160 @@
+# Docker Compose configuration for vLLM model serving
+# Requires NVIDIA GPUs with appropriate drivers
+#
+# Usage:
+#   docker-compose -f docker-compose.models.yml up -d
+#
+# Prerequisites:
+#   - NVIDIA Docker runtime installed
+#   - At least 3 GPUs (T4, A10G, A100 recommended)
+#   - Sufficient VRAM for each model
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Small Model (REFLEX tier) - Qwen2.5-3B
+  # GPU: T4 (16GB) or similar
+  # ==========================================================================
+  vllm-small:
+    image: vllm/vllm-openai:latest
+    runtime: nvidia
+    container_name: cae-vllm-small
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - VLLM_ATTENTION_BACKEND=FLASH_ATTN
+      - HF_TOKEN=${HF_TOKEN:-}
+    command: >
+      --model Qwen/Qwen2.5-3B-Instruct
+      --dtype float16
+      --max-model-len 2048
+      --gpu-memory-utilization 0.90
+      --max-num-batched-tokens 4096
+      --max-num-seqs 32
+      --enable-prefix-caching
+      --port 8001
+      --host 0.0.0.0
+    ports:
+      - "8001:8001"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ==========================================================================
+  # Medium Model (REACTIVE tier) - Qwen2.5-7B
+  # GPU: A10G (24GB) or similar
+  # ==========================================================================
+  vllm-medium:
+    image: vllm/vllm-openai:latest
+    runtime: nvidia
+    container_name: cae-vllm-medium
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=1
+      - VLLM_ATTENTION_BACKEND=FLASH_ATTN
+      - HF_TOKEN=${HF_TOKEN:-}
+    command: >
+      --model Qwen/Qwen2.5-7B-Instruct
+      --dtype float16
+      --max-model-len 4096
+      --gpu-memory-utilization 0.90
+      --max-num-batched-tokens 8192
+      --max-num-seqs 24
+      --enable-prefix-caching
+      --port 8002
+      --host 0.0.0.0
+    ports:
+      - "8002:8002"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ==========================================================================
+  # Large Model (DELIBERATE+ tiers) - Qwen2.5-14B
+  # GPU: A100 (40GB) or similar
+  # ==========================================================================
+  vllm-large:
+    image: vllm/vllm-openai:latest
+    runtime: nvidia
+    container_name: cae-vllm-large
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=2
+      - VLLM_ATTENTION_BACKEND=FLASH_ATTN
+      - HF_TOKEN=${HF_TOKEN:-}
+    command: >
+      --model Qwen/Qwen2.5-14B-Instruct
+      --dtype float16
+      --max-model-len 8192
+      --gpu-memory-utilization 0.90
+      --max-num-batched-tokens 16384
+      --max-num-seqs 16
+      --enable-prefix-caching
+      --port 8003
+      --host 0.0.0.0
+    ports:
+      - "8003:8003"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['2']
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+volumes:
+  model_cache:
+    driver: local
+
+networks:
+  default:
+    name: cae-models-network
+
